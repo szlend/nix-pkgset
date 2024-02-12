@@ -1,0 +1,3 @@
+# Nix
+/result*
+/examples/**/result*
