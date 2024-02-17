@@ -168,6 +168,7 @@ in
       # legacyPackages.<system>.pkgsCross.aarch64-multiplatform.pkgsBuildBuild.foo
       legacyPackages = forAllSystems (system:
         makePackageSetFor nixpkgs.legacyPackages.${system} // {
+          # TODO: Right now we have to define `pkgsCross` manually.
           pkgsCross = forAllCrossPlatforms (crossPlatform:
             makePackageSetFor nixpkgs.legacyPackages.${system}.pkgsCross.${crossPlatform}
           );
