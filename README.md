@@ -181,3 +181,62 @@ in
     };
 }
 ```
+
+### Importing pkgsets from flakes (WIP)
+
+```nix
+{
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+
+    nix-pkgset.url = "github:szlend/nix-pkgset";
+    nix-pkgset.inputs.nixpkgs.follows = "nixpkgs";
+
+    foo-pkgset.url = "/my/foo-pkgset";
+    foo-pkgset.inputs.nix-pkgset.follows = "nix-pkgset";
+    foo-pkgset.inputs.nixpkgs.follows = "nixpkgs";
+  };
+
+  outputs = { self, nixpkgs, nix-pkgset, foo-pkgset, ... }:
+    let
+      lib = nixpkgs.lib;
+      forAllSystems = lib.genAttrs lib.systems.flakeExposed;
+
+      makePackageSetForSystem = system:
+        let
+          # Contains the entire nixpkgs package set.
+          pkgs = nixpkgs.legacyPackages.${system};
+          # Contains `foo` from `foo-pkgset`.
+          fooPkgset = foo-pkgset.legacyPackages.${system};
+          # Contains `bar`
+          barPkgset = nix-pkgset.lib.makePackageSet pkgs (self: {
+            bar = self.callPackage ({ hello }: hello) { };
+          });
+        # Merge all package sets
+        in nix-pkgset.lib.mergePackageSets [ pkgs fooPkgset barPkgset ];
+    in
+    {
+      devShells = forAllSystems (system:
+        let
+          # Create a merged package set for this system.
+          pkgs = makePackageSetForSystem system;
+        in
+        {
+          # A non-spliced devShell (doesn't care about cross-compilation).
+          default = pkgs.mkShell {
+            packages = [ pkgs.hello pkgs.foo pkgs.bar ];
+          };
+
+          # A spliced devShell (packages are set up for cross-compilation).
+          # TODO: This should be `pkgs.pkgsCross.<crossPlatform>`, but it isn't supported yet.
+          spliced = pkgs.callPackage ({ mkShell, hello, foo, bar }:
+            mkShell {
+              nativeBuildInputs = [ hello foo ];
+              buildInput = [ bar ];
+            }
+          ) { };
+        }
+      );
+    };
+}
+```
