@@ -12,6 +12,7 @@
 ## Planned features
 
 - Standarize cross-compilation package sets by automatically generating `pkgsCross`.
+- Avoid re-splicing when merging package sets
 
 ## Examples
 
