@@ -2,6 +2,8 @@
 
 `nix-pkgset` is a lightweight library that helps package nix derivations into cross-compilation aware package sets by [splicing](https://nixos.org/manual/nixpkgs/stable/#ssec-cross-dependency-implementation) packages in the same fashion as [nixpkgs](https://github.com/NixOS/nixpkgs).
 
+**WARNING:** The library is still in proof of concept stage and the API is subject to change.
+
 ## Features
 
 - Create spliced package sets (cross-compilation aware packages).
