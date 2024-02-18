@@ -1,13 +1,17 @@
 { lib }:
 
 let
-  mergeSplices = a: b: {
+  mergeSplices = a: b: rec {
     pkgsBuildBuild = a.pkgsBuildBuild // b.pkgsBuildBuild;
     pkgsBuildHost = a.pkgsBuildHost // b.pkgsBuildHost;
     pkgsBuildTarget = a.pkgsBuildTarget // b.pkgsBuildTarget;
     pkgsHostHost = a.pkgsHostHost // b.pkgsHostHost;
     pkgsHostTarget = a.pkgsHostTarget // b.pkgsHostTarget;
     pkgsTargetTarget = a.pkgsTargetTarget // b.pkgsTargetTarget;
+
+    buildPackages = pkgsBuildHost;
+    pkgs = pkgsHostTarget;
+    targetPackages = pkgsTargetTarget;
   };
 
   makeSplices = splices: self: f: {
@@ -17,6 +21,10 @@ let
     pkgsHostHost = makeScope splices.pkgsHostHost.newScope f;
     pkgsHostTarget = self;
     pkgsTargetTarget = makeScope splices.pkgsTargetTarget.newScope f;
+
+    buildPackages = self.pkgsBuildHost;
+    pkgs = self;
+    targetPackages = self.pkgsTargetTarget;
   };
 
   newScopeSplices = newScope: newScope { }

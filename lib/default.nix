@@ -6,7 +6,7 @@ let
   inherit (scopeLib) makeScope makeScopeWithSplicing';
 
   otherSplices = pkgs: f: {
-    # `pkgs<host><target>` needs to be rescoped on top of `pkgs` for some reason.
+    # `pkgs<host><target>.newScope` is not enough for some reason. It needs to be re-scoped on top of `pkgs`.
     selfBuildBuild = makeScope (lib.makeScope pkgs.newScope (_self: pkgs.pkgsBuildBuild)).newScope f;
     selfBuildHost = makeScope (lib.makeScope pkgs.newScope (_self: pkgs.pkgsBuildHost)).newScope f;
     selfBuildTarget = makeScope (lib.makeScope pkgs.newScope (_self: pkgs.pkgsBuildTarget)).newScope f;
