@@ -10,12 +10,12 @@ let
     pkgsTargetTarget = a.pkgsTargetTarget // b.pkgsTargetTarget;
   };
 
-  makeSplices = splices: f: {
+  makeSplices = splices: self: f: {
     pkgsBuildBuild = makeScope splices.pkgsBuildBuild.newScope f;
     pkgsBuildHost = makeScope splices.pkgsBuildHost.newScope f;
     pkgsBuildTarget = makeScope splices.pkgsBuildTarget.newScope f;
     pkgsHostHost = makeScope splices.pkgsHostHost.newScope f;
-    pkgsHostTarget = makeScope splices.pkgsHostTarget.newScope f;
+    pkgsHostTarget = self;
     pkgsTargetTarget = makeScope splices.pkgsTargetTarget.newScope f;
   };
 
@@ -36,7 +36,7 @@ let
   makeScope = newScope: f:
     let
       baseSplices = newScopeSplices newScope;
-      selfSplices = makeSplices baseSplices f;
+      selfSplices = makeSplices baseSplices self f;
 
       self = f self // selfSplices // {
         newScope = scope: newScope (self // mergeSplices baseSplices selfSplices // scope);

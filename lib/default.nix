@@ -6,12 +6,13 @@ let
   inherit (scopeLib) makeScope makeScopeWithSplicing';
 
   otherSplices = pkgs: f: {
-    selfBuildBuild = makeScope pkgs.pkgsBuildBuild.newScope f;
-    selfBuildHost = makeScope pkgs.pkgsBuildHost.newScope f;
-    selfBuildTarget = makeScope pkgs.pkgsBuildTarget.newScope f;
-    selfHostHost = makeScope pkgs.pkgsHostHost.newScope f;
-    selfHostTarget = makeScope pkgs.pkgsHostTarget.newScope f;
-    selfTargetTarget = if pkgs.pkgsTargetTarget?newScope then makeScope pkgs.pkgsTargetTarget.newScope f else pkgs.pkgsTargetTarget;
+    # `pkgs<host><target>` needs to be rescoped on top of `pkgs` for some reason.
+    selfBuildBuild = makeScope (lib.makeScope pkgs.newScope (_self: pkgs.pkgsBuildBuild)).newScope f;
+    selfBuildHost = makeScope (lib.makeScope pkgs.newScope (_self: pkgs.pkgsBuildHost)).newScope f;
+    selfBuildTarget = makeScope (lib.makeScope pkgs.newScope (_self: pkgs.pkgsBuildTarget)).newScope f;
+    selfHostHost = makeScope (lib.makeScope pkgs.newScope (_self: pkgs.pkgsHostHost)).newScope f;
+    selfHostTarget = makeScope (lib.makeScope pkgs.newScope (_self: pkgs.pkgsHostTarget)).newScope f;
+    selfTargetTarget = if pkgs.pkgsTargetTarget?newScope then makeScope (lib.makeScope pkgs.newScope (_self: pkgs.pkgsTargetTarget)).newScope f else { };
   };
 
   makePackageSet = pkgs: f:

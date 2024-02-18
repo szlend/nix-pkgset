@@ -7,7 +7,7 @@
 ## Features
 
 - Create spliced package sets (cross-compilation aware packages).
-- Access non-spliced package sets through `pkgs<build><target>`.
+- Access non-spliced package sets through `pkgs<host><target>`.
 - Merge package sets together (including spliced packages and non-spliced package sets).
 - Avoid re-instantiating nixpkgs (see: [1000 instances of nixpkgs](https://zimbatm.com/notes/1000-instances-of-nixpkgs)).
 
@@ -30,7 +30,7 @@ let
         # `nativeBuildInputs` packages are spliced to run on the build platform.
         hello
 
-        # Packages can be referenced by `pkgs<build><host>`.
+        # Packages can be referenced by `pkgs<host><target>`.
         ${pkgsBuildBuild.hello}/bin/hello
 
         # Packages are spliced to run on the host platform.
@@ -46,7 +46,7 @@ let
         hello
         foo
 
-        # Packages can be referenced by `pkgs<build><host>`.
+        # Packages can be referenced by `pkgs<host><target>`.
         ${pkgsBuildBuild.hello}/bin/hello
         ${pkgsBuildBuild.foo}/bin/foo
 
@@ -64,7 +64,7 @@ in
   bar = pkgset.bar;
   hello = pkgset.hello; # Error: `hello` is not in the package set.
 
-  # We can reference packages from the package set `pkgs<build><host>`.
+  # We can reference packages from the package set `pkgs<host><target>`.
   buildbuild-foo = pkgset.pkgsBuildBuild.foo;
   buildbuild-bar = pkgset.pkgsBuildBuild.bar;
   buildbuild-hello = pkgset.pkgsBuildBuild.hello; # Error: `hello` is not in the package set.
@@ -103,7 +103,7 @@ in
   bar = mergedPkgset.bar;
   hello = mergedPkgset.hello; # Error: `hello` is not in the package set.
 
-  # We can reference packages from the package set `pkgs<build><host>`.
+  # We can reference packages from the package set `pkgs<host><target>`.
   buildbuild-foo = mergedPkgset.pkgsBuildBuild.foo;
   buildbuild-bar = mergedPkgset.pkgsBuildBuild.bar;
   buildbuild-hello = mergedPkgset.pkgsBuildBuild.hello; # Error: `hello` is not in the package set.
@@ -138,7 +138,7 @@ in
   foo = mergedPkgset.foo;
   hello = mergedPkgset.hello;
 
-  # We can reference packages from the package set `pkgs<build><host>`.
+  # We can reference packages from the package set `pkgs<host><target>`.
   buildbuild-foo = mergedPkgset.pkgsBuildBuild.foo;
   buildbuild-hello = mergedPkgset.pkgsBuildBuild.hello;
 }
