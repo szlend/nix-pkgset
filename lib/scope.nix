@@ -42,6 +42,7 @@ let
         newScope = scope: newScope (self // mergeSplices baseSplices selfSplices // scope);
         callPackage = self.newScope { };
         overrideScope = g: makeScope newScope (lib.extends g f);
+        overrideNewScope = newScope: makeScope newScope f;
         packages = f;
         # TODO: Override makeScopeWithSplicing, makeScopeWithSplicing', __splicedPackages?
         # TODO: Override `buildPackages` `targetPackages`?
@@ -85,6 +86,9 @@ let
             inherit otherSplices keep extra;
             f = lib.extends g f;
           });
+        overrideNewScope = newScope: makeScopeWithSplicing'
+          { inherit splicePackages newScope; }
+          { inherit otherSplices keep extra f; };
         packages = f;
         # TODO: Override makeScopeWithSplicing, makeScopeWithSplicing', __splicedPackages?
         # TODO: Override `buildPackages` `targetPackages`?
