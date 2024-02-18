@@ -144,6 +144,18 @@ in
 }
 ```
 
+### Working with overlays
+
+```nix
+let
+  # Create a package set from an overlay instead on instantiating a new nixpkgs instance.
+  rustOverlay = nix-pkgset.lib.packageSetFromOverlay pkgs (import rust-overlay);
+in
+{
+  rust-stable = rustOverlay.rust-bin.stable.latest.minimal;
+}
+```
+
 ### Exporting pkgsets from flakes
 
 ```nix

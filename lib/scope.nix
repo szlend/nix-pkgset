@@ -51,8 +51,12 @@ let
         callPackage = self.newScope { };
         overrideScope = g: makeScope newScope (lib.extends g f);
         packages = f;
+
+        # TODO: Not sure if this is a good idea, but it's convenient for avoiding infinite
+        # recursion or accessing shadowed packages.
+        callParentScopePackage = newScope { };
+
         # TODO: Override makeScopeWithSplicing, makeScopeWithSplicing', __splicedPackages?
-        # TODO: Override `buildPackages` `targetPackages`?
         # TODO: Override `pkgsCross`?
       };
     in
@@ -94,8 +98,12 @@ let
             f = lib.extends g f;
           });
         packages = f;
+
+        # TODO: Not sure if this is a good idea, but it's convenient for avoiding infinite
+        # recursion or accessing shadowed packages.
+        callParentScopePackage = newScope { };
+
         # TODO: Override makeScopeWithSplicing, makeScopeWithSplicing', __splicedPackages?
-        # TODO: Override `buildPackages` `targetPackages`?
         # TODO: Override `pkgsCross`?
       };
     in

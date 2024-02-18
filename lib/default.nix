@@ -29,9 +29,19 @@ let
       # TODO: Use `__splicedPackages` to skip splicing twice.
     in
     makePackageSet scope f;
+
+  packageSetFromOverlay = pkgs: overlay:
+    let
+      attrs = lib.attrNames (overlay pkgs pkgs);
+      applyOverlay = pkgs: lib.fix (lib.extends overlay (_self: pkgs));
+    in
+    # Using `callParentPackage` here to avoid infinite recursion.
+    makePackageSet pkgs (self:
+      lib.getAttrs attrs (self.callParentScopePackage ({ pkgsHostTarget }: applyOverlay pkgsHostTarget) { }));
 in
 {
   inherit
     makePackageSet
-    mergePackageSets;
+    mergePackageSets
+    packageSetFromOverlay;
 }

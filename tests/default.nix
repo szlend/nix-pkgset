@@ -1,6 +1,11 @@
 { pkgs, nix-pkgset }:
 
 let
+  rustOverlay = import (builtins.fetchTarball {
+    url = "https://github.com/oxalica/rust-overlay/archive/d500e370b26f9b14303cb39bf1509df0a920c8b0.tar.gz";
+    sha256 = "056qhc1bv5s4rf8nvmgxacqqfdjb8rky6g60cgwivqagvdgsaayd";
+  });
+
   # Pick an arbitrary foreign nixpkgs package set.
   pkgsForeign = if pkgs.stdenv.isAarch64 then pkgs.pkgsCross.gnu64 else pkgs.pkgsCross.aarch64-multiplatform;
 
@@ -15,8 +20,11 @@ let
 
   mergedPkgset = nix-pkgset.lib.mergePackageSets [ pkgs pkgset ];
   mergedPkgsetForeign = nix-pkgset.lib.mergePackageSets [ pkgsForeign pkgsetForegin ];
-in
 
+  makeRustOverlayPkgsetFor = pkgs: nix-pkgset.lib.packageSetFromOverlay pkgs rustOverlay;
+  rustOverlayPkgset = makeRustOverlayPkgsetFor pkgs;
+  rustOverlayPkgsetForeign = makeRustOverlayPkgsetFor pkgsForeign;
+in
 {
   # makePackageSet
   my-bar = pkgset.my-bar;
@@ -43,4 +51,27 @@ in
   merged-buildhost-hello-foreign = mergedPkgsetForeign.pkgsBuildHost.hello;
   merged-buildhost-my-bar = mergedPkgset.pkgsBuildHost.my-bar;
   merged-buildhost-my-bar-foreign = mergedPkgsetForeign.pkgsBuildHost.my-bar;
+
+  # packageSetFromOverlay
+  rust-stable = rustOverlayPkgset.callPackage
+    ({ runCommand, rust, rust-bin }:
+      runCommand "rustc-version" { nativeBuildInputs = [ rust-bin.stable.latest.minimal ]; } ''
+        rustc --version
+        rust_dir=$(dirname $(dirname $(type -P rustc)))
+        (set -x; test -d $rust_dir/lib/rustlib/${rust.lib.envVars.rustTargetPlatform})
+        ln -s $rust_dir $out
+      ''
+    )
+    { };
+
+  rust-stable-foreign = rustOverlayPkgsetForeign.callPackage
+    ({ runCommand, rust, rust-bin }:
+      runCommand "rustc-version" { nativeBuildInputs = [ rust-bin.stable.latest.minimal ]; } ''
+        rustc --version
+        rust_dir=$(dirname $(dirname $(type -P rustc)))
+        (set -x; test -d $rust_dir/lib/rustlib/${rust.lib.envVars.rustTargetPlatform})
+        ln -s $rust_dir $out
+      ''
+    )
+    { };
 }
