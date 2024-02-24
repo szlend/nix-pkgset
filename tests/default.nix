@@ -13,6 +13,8 @@ let
   makePackageSetFor = pkgs: nix-pkgset.lib.makePackageSet pkgs (self: {
     my-foo = self.callPackage ./my-foo.nix { };
     my-bar = self.callPackage ./my-bar.nix { };
+
+    rust-bin = self.callParentScopePackage ({ lib, pkgsHostTarget }: (lib.fix (lib.extends rustOverlay (_self: pkgsHostTarget))).rust-bin) { };
   });
 
   pkgset = makePackageSetFor pkgs;
@@ -35,6 +37,17 @@ in
 
   buildhost-my-bar = pkgset.pkgsBuildHost.my-bar;
   buildhost-my-bar-foreign = pkgsetForegin.pkgsBuildHost.my-bar;
+
+  my-bar-call-package = pkgset.callPackage ({ my-bar }: assert (!my-bar?__spliced); my-bar) { };
+  my-bar-call-package-foreign = pkgsetForegin.callPackage ({ my-bar }: assert my-bar?__spliced; my-bar) { };
+  buildhost-my-bar-call-package = pkgset.pkgsBuildHost.callPackage ({ my-bar }: assert (!my-bar?__spliced); my-bar) { };
+  buildhost-my-bar-call-package-foreign = pkgsetForegin.pkgsBuildHost.callPackage ({ my-bar }: assert my-bar?__spliced; my-bar) { };
+
+  rust-bin-stable = pkgset.rust-bin.stable.latest.minimal;
+  rust-bin-stable-call-package-buildhost-foreign = pkgsetForegin.callPackage ({ pkgsBuildHost }: assert (!pkgsBuildHost.rust-bin.stable.latest.minimal?__spliced); pkgsBuildHost.rust-bin.stable.latest.minimal) { };
+  rust-bin-stable-call-package-buildhost-call-package-foreign = pkgsetForegin.callPackage ({ pkgsBuildHost }: pkgsBuildHost.callPackage ({ rust-bin }: assert rust-bin.stable.latest.minimal?__spliced; rust-bin.stable.latest.minimal) { }) { };
+  buildhost-rust-bin-stable-foreign = pkgsetForegin.pkgsBuildHost.rust-bin.stable.latest.minimal;
+  buildhost-rust-bin-stable-call-package-foreign = pkgsetForegin.pkgsBuildHost.callPackage ({ rust-bin }: assert rust-bin.stable.latest.minimal?__spliced; rust-bin.stable.latest.minimal) { };
 
   # mergePackageSets
   merged-hello = mergedPkgset.hello;

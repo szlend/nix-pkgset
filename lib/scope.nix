@@ -7,7 +7,7 @@ let
     pkgsBuildTarget = a.pkgsBuildTarget // b.pkgsBuildTarget;
     pkgsHostHost = a.pkgsHostHost // b.pkgsHostHost;
     pkgsHostTarget = a.pkgsHostTarget // b.pkgsHostTarget;
-    pkgsTargetTarget = a.pkgsTargetTarget // b.pkgsTargetTarget;
+    pkgsTargetTarget = (if a.pkgsTargetTarget?newScope then a.pkgsTargetTarget else { }) // (if b.pkgsTargetTarget?newScope then b.pkgsTargetTarget else { });
 
     buildPackages = pkgsBuildHost;
     pkgs = pkgsHostTarget;
@@ -20,7 +20,7 @@ let
     pkgsBuildTarget = makeScope splices.pkgsBuildTarget.newScope f;
     pkgsHostHost = makeScope splices.pkgsHostHost.newScope f;
     pkgsHostTarget = self;
-    pkgsTargetTarget = makeScope splices.pkgsTargetTarget.newScope f;
+    pkgsTargetTarget = if splices.pkgsTargetTarget?newScope then makeScope splices.pkgsTargetTarget.newScope f else splices.pkgsTargetTarget;
 
     buildPackages = self.pkgsBuildHost;
     pkgs = self;
