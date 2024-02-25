@@ -7,7 +7,8 @@ let
   });
 
   # Pick an arbitrary foreign nixpkgs package set.
-  pkgsForeign = if pkgs.stdenv.isAarch64 then pkgs.pkgsCross.gnu64 else pkgs.pkgsCross.aarch64-multiplatform;
+  foreignPlatform = if pkgs.stdenv.isAarch64 then "gnu64" else "aarch64-multiplatform";
+  pkgsForeign = pkgs.pkgsCross.${foreignPlatform};
 
   # Create our package set.
   makePackageSetFor = pkgs: nix-pkgset.lib.makePackageSet pkgs (self: {
@@ -48,6 +49,9 @@ in
   rust-bin-stable-call-package-buildhost-call-package-foreign = pkgsetForegin.callPackage ({ pkgsBuildHost }: pkgsBuildHost.callPackage ({ rust-bin }: assert rust-bin.stable.latest.minimal?__spliced; rust-bin.stable.latest.minimal) { }) { };
   buildhost-rust-bin-stable-foreign = pkgsetForegin.pkgsBuildHost.rust-bin.stable.latest.minimal;
   buildhost-rust-bin-stable-call-package-foreign = pkgsetForegin.pkgsBuildHost.callPackage ({ rust-bin }: assert rust-bin.stable.latest.minimal?__spliced; rust-bin.stable.latest.minimal) { };
+
+  cross-my-bar = pkgset.pkgsCross.${foreignPlatform}.my-bar;
+  cross-llvm-my-bar = pkgset.pkgsCross.${foreignPlatform}.pkgsLLVM.my-bar;
 
   # mergePackageSets
   merged-hello = mergedPkgset.hello;

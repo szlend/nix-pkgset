@@ -182,12 +182,7 @@ in
       # legacyPackages.<system>.pkgsCross.aarch64-multiplatform.foo
       # legacyPackages.<system>.pkgsCross.aarch64-multiplatform.pkgsBuildBuild.foo
       legacyPackages = forAllSystems (system:
-        makePackageSetFor nixpkgs.legacyPackages.${system} // {
-          # TODO: Right now we have to define `pkgsCross` manually.
-          pkgsCross = forAllCrossPlatforms (crossPlatform:
-            makePackageSetFor nixpkgs.legacyPackages.${system}.pkgsCross.${crossPlatform}
-          );
-        }
+        makePackageSetFor nixpkgs.legacyPackages.${system}
       );
 
       # packages.<system>.foo
@@ -198,7 +193,7 @@ in
 }
 ```
 
-### Importing pkgsets from flakes (WIP)
+### Importing pkgsets from flakes
 
 ```nix
 {
@@ -244,8 +239,7 @@ in
           };
 
           # A spliced devShell (packages are set up for cross-compilation).
-          # TODO: This should be `pkgs.pkgsCross.<crossPlatform>`, but it isn't supported yet.
-          spliced = pkgs.callPackage ({ mkShell, hello, foo, bar }:
+          spliced = pkgs.pkgsCross.aarch64-multiplatform.callPackage ({ mkShell, hello, foo, bar }:
             mkShell {
               nativeBuildInputs = [ hello foo ];
               buildInput = [ bar ];

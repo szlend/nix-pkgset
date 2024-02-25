@@ -8,6 +8,13 @@ let
      , pkgsHostHost
      , pkgsHostTarget
      , pkgsTargetTarget
+     , pkgsCross
+     , pkgsLLVM
+     , pkgsMusl
+     , pkgsi686Linux
+     , pkgsx86_64Darwin
+     , pkgsStatic
+     , pkgsExtraHardening
      } @ splices: splices)
     { };
 
@@ -38,10 +45,22 @@ let
     targetPackages = pkgsTargetTarget;
   };
 
+  mergeExtraPackageSets = a: b: {
+    pkgsCross = lib.mapAttrs
+      (name: _crossSystem: makePackageSet a.pkgsCross.${name} (_self: a.pkgsCross.${name} // b.pkgsCross.${name}))
+      lib.systems.examples;
+    pkgsLLVM = makePackageSet a.pkgsLLVM (_self: a.pkgsLLVM // b.pkgsLLVM);
+    pkgsMusl = makePackageSet a.pkgsMusl (_self: a.pkgsMusl // b.pkgsMusl);
+    pkgsi686Linux = makePackageSet a.pkgsi686Linux (_self: a.pkgsi686Linux // b.pkgsi686Linux);
+    pkgsx86_64Darwin = makePackageSet a.pkgsx86_64Darwin (_self: a.pkgsx86_64Darwin // b.pkgsx86_64Darwin);
+    pkgsStatic = makePackageSet a.pkgsStatic (_self: a.pkgsStatic // b.pkgsStatic);
+    pkgsExtraHardening = makePackageSet a.pkgsExtraHardening (_self: a.pkgsExtraHardening // b.pkgsExtraHardening);
+  };
+
   # Adapted from https://github.com/NixOS/nixpkgs/blob/3378e4ec169425e7434d101f32680c068799a0f4/lib/customisation.nix
   # Changes:
-  #  - Include self splices in `self`
-  #  - Include merged splices in `newScope`
+  #  - Include self splices and self extra package sets in `self`
+  #  - Include merged splices and merged extra package sets in `newScope`
   #  - Include `callParentScopePackage`
   #  - Override makeScopeWithSplicing/makeScopeWithSplicing'
   makeScopeWithSplicing' =
@@ -63,10 +82,21 @@ let
         pkgsHostTarget = self; # Not `otherSplices.selfHostTarget`;
         pkgsTargetTarget = otherSplices.selfTargetTarget;
       };
+      selfExtraPackageSets = {
+        pkgsCross = lib.mapAttrs
+          (name: _crossSystem: makePackageSet baseSplices.pkgsCross.${name} f)
+          lib.systems.examples;
+        pkgsLLVM = makePackageSet baseSplices.pkgsLLVM f;
+        pkgsMusl = makePackageSet baseSplices.pkgsMusl f;
+        pkgsi686Linux = makePackageSet baseSplices.pkgsi686Linux f;
+        pkgsx86_64Darwin = makePackageSet baseSplices.pkgsx86_64Darwin f;
+        pkgsStatic = makePackageSet baseSplices.pkgsStatic f;
+        pkgsExtraHardening = makePackageSet baseSplices.pkgsExtraHardening f;
+      };
 
-      spliced0 = splicePackages selfSplices // mergeSplices baseSplices selfSplices;
+      spliced0 = splicePackages selfSplices // mergeSplices baseSplices selfSplices // mergeExtraPackageSets baseSplices selfSplices;
       spliced = extra spliced0 // spliced0 // keep self;
-      self = f self // selfSplices // {
+      self = f self // selfSplices // selfExtraPackageSets // {
         newScope = scope: newScope (spliced // scope);
         callPackage = newScope spliced;
         overrideScope = g: (makeScopeWithSplicing'
@@ -80,7 +110,8 @@ let
         # TODO: Not sure if this is a good idea, but it's convenient for avoiding infinite
         # recursion or accessing shadowed packages.
         callParentScopePackage = newScope { };
-        # TODO: Override `pkgsCross`, `pkgsLLVM`, etc?
+        # TODO: `pkgs.appendOverlays`
+        # TODO: `pkgs.extend`
       };
     in
     self;
