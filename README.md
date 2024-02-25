@@ -6,15 +6,16 @@
 
 ## Features
 
-- Create spliced package sets (cross-compilation aware packages).
-- Access non-spliced package sets through `pkgs<host><target>`.
+- Create package sets with splicing support (cross-compilation aware packages).
+- Access non-spliced packages through `pkgs<host><target>`.
+- Access extra package variants like `pkgsCross.<crossSystem>` and `pkgsLLVM`.
 - Merge package sets together (including spliced packages and non-spliced package sets).
 - Avoid re-instantiating nixpkgs (see: [1000 instances of nixpkgs](https://zimbatm.com/notes/1000-instances-of-nixpkgs)).
 
 ## Planned features
 
-- Standarize cross-compilation package sets by automatically generating `pkgsCross`.
-- Avoid re-splicing when merging package sets
+- Optimize unnecessary resplicing of packages.
+- Optimize unnecessary reevaluation on equivalent `pkgs<host><target>` sets.
 
 ## Examples
 
