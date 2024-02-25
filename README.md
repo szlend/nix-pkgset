@@ -243,7 +243,7 @@ in
           spliced = pkgs.pkgsCross.aarch64-multiplatform.callPackage ({ mkShell, hello, foo, bar }:
             mkShell {
               nativeBuildInputs = [ hello foo ];
-              buildInput = [ bar ];
+              buildInputs = [ bar ];
             }
           ) { };
         }
