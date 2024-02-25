@@ -8,14 +8,14 @@
 
 - Create package sets with splicing support (cross-compilation aware packages).
 - Access non-spliced packages through `pkgs<host><target>`.
-- Access extra package variants like `pkgsCross.<crossSystem>` and `pkgsLLVM`.
-- Merge package sets together (including spliced packages and non-spliced package sets).
+- Access extra package set variants like `pkgsCross.<crossSystem>` and `pkgsLLVM`.
 - Avoid re-instantiating nixpkgs (see: [1000 instances of nixpkgs](https://zimbatm.com/notes/1000-instances-of-nixpkgs)).
+- Merge package sets together while keeping all of the above.
 
 ## Planned features
 
-- Optimize unnecessary resplicing of packages.
-- Optimize unnecessary reevaluation on equivalent `pkgs<host><target>` sets.
+- Optimize unnecessary re-splicing of packages.
+- Optimize unnecessary re-evaluation on equivalent `pkgs<host><target>` sets.
 
 ## Examples
 
@@ -25,7 +25,7 @@
 let
   # Create a new package set that inherits the scope from `pkgs`.
   pkgset = nix-pkgset.lib.makePackageSet pkgs (self: {
-    # We can reference spliced packages from `pkgs`.
+    # Create package `foo` which depends on `hello` at build time and run time.
     foo = self.callPackage ({ runCommand, hello, pkgsBuildBuild }:
       runCommand "foo" { nativeBuildInputs = [ hello ]; } ''
         # `nativeBuildInputs` packages are spliced to run on the build platform.
@@ -40,7 +40,7 @@ let
       ''
     ) { };
 
-    # We can also reference spliced packages from `self`.
+    # Create package `bar` which depends on `hello` and `foo` at build time and run time.
     bar = self.callPackage ({ runCommand, hello, foo, pkgsBuildBuild }:
       runCommand "bar" { nativeBuildInputs = [ hello foo ]; } ''
         # `nativeBuildInputs` packages are spliced to run on the build platform.
@@ -63,12 +63,18 @@ in
   # We can reference packages from the package set.
   foo = pkgset.foo;
   bar = pkgset.bar;
-  hello = pkgset.hello; # Error: `hello` is not in the package set.
+
+  # We can't reference packages that are not in the package set.
+  # Package `hello` is only available in `callPackage` scope.
+  hello = pkgset.hello; # Error
 
   # We can reference packages from the package set `pkgs<host><target>`.
   buildbuild-foo = pkgset.pkgsBuildBuild.foo;
   buildbuild-bar = pkgset.pkgsBuildBuild.bar;
-  buildbuild-hello = pkgset.pkgsBuildBuild.hello; # Error: `hello` is not in the package set.
+
+  # We can't reference packages that are not in the package set.
+  # Package `hello` is only available in `callPackage` scope.
+  buildbuild-hello = pkgset.pkgsBuildBuild.hello; # Error
 
   # We can create a derivation based on the package set's scope.
   baz = pkgset.callPackage ({ mkDerivation, hello, bar, foo }:
@@ -102,12 +108,17 @@ in
   # We can reference packages from the package set.
   foo = mergedPkgset.foo;
   bar = mergedPkgset.bar;
-  hello = mergedPkgset.hello; # Error: `hello` is not in the package set.
+  # We can't reference packages that are not in the package set.
+  # Package `hello` is only available in `callPackage` scope.
+  hello = mergedPkgset.hello; # Error
 
   # We can reference packages from the package set `pkgs<host><target>`.
   buildbuild-foo = mergedPkgset.pkgsBuildBuild.foo;
   buildbuild-bar = mergedPkgset.pkgsBuildBuild.bar;
-  buildbuild-hello = mergedPkgset.pkgsBuildBuild.hello; # Error: `hello` is not in the package set.
+
+  # We can't reference packages that are not in the package set.
+  # Package `hello` is only available in `callPackage` scope.
+  buildbuild-hello = mergedPkgset.pkgsBuildBuild.hello; # Error
 
   # We can create a derivation based on the package set's scope.
   baz = mergedPkgset.callPackage ({ mkDerivation, hello, bar, foo }:
@@ -127,21 +138,21 @@ in
 
 ```nix
 let
-  pkgset = nix-pkgset.lib.makePackageSet pkgs (self: {
+  myPkgset = nix-pkgset.lib.makePackageSet pkgs (self: {
     foo = self.callPackage ({ hello }: hello) { };
   });
 
-  # Merge `pkgs` (from nixpkgs) with `pkgset`.
-  mergedPkgset = nix-pkgset.lib.mergePackageSets [ pkgs pkgset ];
+  # Merge `pkgs` (from nixpkgs) with `myPkgset`.
+  mergedPkgset = nix-pkgset.lib.mergePackageSets [ pkgs myPkgset ];
 in
 {
   # We can reference packages from the package set.
-  foo = mergedPkgset.foo;
-  hello = mergedPkgset.hello;
+  foo = mergedPkgset.foo; # From `myPkgset`
+  hello = mergedPkgset.hello; # From `pkgs`
 
   # We can reference packages from the package set `pkgs<host><target>`.
-  buildbuild-foo = mergedPkgset.pkgsBuildBuild.foo;
-  buildbuild-hello = mergedPkgset.pkgsBuildBuild.hello;
+  buildbuild-foo = mergedPkgset.pkgsBuildBuild.foo; # From `myPkgset`
+  buildbuild-hello = mergedPkgset.pkgsBuildBuild.hello; # From `pkgs`
 }
 ```
 
@@ -171,10 +182,9 @@ in
     let
       lib = nixpkgs.lib;
       forAllSystems = lib.genAttrs lib.systems.flakeExposed;
-      forAllCrossPlatforms = lib.genAttrs (lib.attrNames lib.systems.examples);
 
       makePackageSetFor = pkgs: nix-pkgset.lib.makePackageSet pkgs (self: {
-        foo = self.callPackage ({ hello }: hello) { };
+        foo = self.callPackage ({ hello }: hello) { }; # Just re-export `hello` as `foo`
       });
     in
     {
@@ -222,7 +232,7 @@ in
           fooPkgset = foo-pkgset.legacyPackages.${system};
           # Contains `bar`
           barPkgset = nix-pkgset.lib.makePackageSet pkgs (self: {
-            bar = self.callPackage ({ hello }: hello) { };
+            bar = self.callPackage ({ hello }: hello) { }; # Just re-export `hello` as `bar`
           });
         # Merge all package sets
         in nix-pkgset.lib.mergePackageSets [ pkgs fooPkgset barPkgset ];
