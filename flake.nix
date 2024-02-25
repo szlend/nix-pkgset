@@ -9,7 +9,7 @@
       forAllSystems = lib.genAttrs lib.systems.flakeExposed;
     in
     {
-      lib = import ./lib { inherit lib; };
+      lib = import ./. { inherit lib; };
 
       legacyPackages = forAllSystems (system: {
         checks = nixpkgs.legacyPackages.${system}.linkFarm "checks"
