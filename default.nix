@@ -14,7 +14,8 @@ let
      , pkgsi686Linux
      , pkgsx86_64Darwin
      , pkgsStatic
-     , pkgsExtraHardening
+       # FIXME: Missing in 23.11
+       # , pkgsExtraHardening
      } @ splices: splices)
     { };
 
@@ -54,7 +55,8 @@ let
     pkgsi686Linux = makePackageSet a.pkgsi686Linux (_self: a.pkgsi686Linux // b.pkgsi686Linux);
     pkgsx86_64Darwin = makePackageSet a.pkgsx86_64Darwin (_self: a.pkgsx86_64Darwin // b.pkgsx86_64Darwin);
     pkgsStatic = makePackageSet a.pkgsStatic (_self: a.pkgsStatic // b.pkgsStatic);
-    pkgsExtraHardening = makePackageSet a.pkgsExtraHardening (_self: a.pkgsExtraHardening // b.pkgsExtraHardening);
+    # FIXME: Missing in 23.11
+    # pkgsExtraHardening = makePackageSet a.pkgsExtraHardening (_self: a.pkgsExtraHardening // b.pkgsExtraHardening);
   };
 
   # Adapted from https://github.com/NixOS/nixpkgs/blob/3378e4ec169425e7434d101f32680c068799a0f4/lib/customisation.nix
@@ -91,7 +93,8 @@ let
         pkgsi686Linux = makePackageSet baseSplices.pkgsi686Linux f;
         pkgsx86_64Darwin = makePackageSet baseSplices.pkgsx86_64Darwin f;
         pkgsStatic = makePackageSet baseSplices.pkgsStatic f;
-        pkgsExtraHardening = makePackageSet baseSplices.pkgsExtraHardening f;
+        # FIXME: Missing in 23.11
+        # pkgsExtraHardening = makePackageSet baseSplices.pkgsExtraHardening f;
       };
 
       spliced0 = splicePackages selfSplices // mergeSplices baseSplices selfSplices // mergeExtraPackageSets baseSplices selfSplices;
