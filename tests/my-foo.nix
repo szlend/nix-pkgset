@@ -1,4 +1,8 @@
-{ runCommand, hello, pkgsBuildBuild }:
+{
+  runCommand,
+  hello,
+  pkgsBuildBuild,
+}:
 
 runCommand "my-foo" { nativeBuildInputs = [ hello ]; } ''
   echo "Running native spliced package"

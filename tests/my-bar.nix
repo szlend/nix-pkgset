@@ -1,11 +1,15 @@
-{ runCommand, my-foo, pkgsBuildBuild }:
+{
+  runCommand,
+  my-foo,
+  pkgsetBuildBuild,
+}:
 
 runCommand "my-bar" { nativeBuildInputs = [ my-foo ]; } ''
   echo "Running native spliced package"
   my-foo
 
   echo "Running native non-spliced package"
-  ${pkgsBuildBuild.my-foo}/bin/my-foo
+  ${pkgsetBuildBuild.my-foo}/bin/my-foo
 
   echo "Installing foreign spliced package"
   mkdir -p $out/bin
