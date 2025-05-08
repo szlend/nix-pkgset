@@ -1,8 +1,18 @@
 { lib }:
 
 let
+  # Shift `otherSplices` depending on `host` and `target`.
+  mapSplices = otherSplices: host: target: {
+    selfBuildBuild = otherSplices."selfBuildBuild";
+    selfBuildHost = otherSplices."selfBuild${host}";
+    selfBuildTarget = otherSplices."selfBuild${target}";
+    selfHostHost = otherSplices."self${host}${host}";
+    selfHostTarget = otherSplices."self${host}${target}";
+    selfTargetTarget = otherSplices."self${target}${target}";
+  };
+
   makePackageSet =
-    name: newScope: f:
+    name: newScope: f: otherSplices':
     let
       callPackage = newScope { };
       prev = callPackage (
@@ -24,18 +34,33 @@ let
         __splices // { inherit splicePackages; }
       ) { };
 
-      # Evaluate the scope function `f` under different splices.
-      otherSplices = {
-        selfBuildBuild = makePackageSet name prev.selfBuildBuild.newScope f;
-        selfBuildHost = makePackageSet name prev.selfBuildHost.newScope f;
-        selfBuildTarget = makePackageSet name prev.selfBuildTarget.newScope f;
-        selfHostHost = makePackageSet name prev.selfHostHost.newScope f;
-        selfHostTarget = makePackageSet name prev.selfHostTarget.newScope f;
-        # Sometimes `prev.selfTargetTarget` only contains `stdenv`, and nothing else.
+      # Evaluate the scope function `f` under different splices. Avoid re-evaluating
+      # splices recursively by remapping them back to root `otherSplices`.
+      defaultOtherSplices = {
+        selfBuildBuild = makePackageSet name prev.selfBuildBuild.newScope f (
+          mapSplices defaultOtherSplices "Build" "Build"
+        );
+        selfBuildHost = makePackageSet name prev.selfBuildHost.newScope f (
+          mapSplices defaultOtherSplices "Build" "Host"
+        );
+        selfBuildTarget = makePackageSet name prev.selfBuildTarget.newScope f (
+          mapSplices defaultOtherSplices "Build" "Target"
+        );
+        selfHostHost = makePackageSet name prev.selfHostHost.newScope f (
+          mapSplices defaultOtherSplices "Host" "Host"
+        );
+        selfHostTarget = makePackageSet name prev.selfHostTarget.newScope f (
+          mapSplices defaultOtherSplices "Host" "Target"
+        );
         selfTargetTarget = lib.optionalAttrs (prev.selfTargetTarget ? "newScope") (
-          makePackageSet name prev.selfTargetTarget.newScope f
+          makePackageSet name prev.selfTargetTarget.newScope f (
+            mapSplices defaultOtherSplices "Target" "Target"
+          )
         );
       };
+
+      # If `otherSplices'` have already been defined for us, prefer them instead.
+      otherSplices = lib.defaultTo defaultOtherSplices otherSplices';
 
       makeScopeWithSplicing' = lib.makeScopeWithSplicing' {
         inherit newScope;
@@ -82,5 +107,5 @@ in
   makePackageSet =
     name: newScope: f:
     # Remove the `packages` attribute as it conflicts with flake schema.
-    builtins.removeAttrs (makePackageSet name newScope f) [ "packages" ];
+    builtins.removeAttrs (makePackageSet name newScope f null) [ "packages" ];
 }
